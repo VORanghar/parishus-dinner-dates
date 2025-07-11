@@ -50,6 +50,10 @@ const Auth = () => {
     }));
   };
 
+  const handleTermsChange = (checked: boolean | "indeterminate") => {
+    setAcceptTerms(checked === true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-bg to-dark-card flex items-center justify-center p-6">
       <div className="max-w-md w-full">
@@ -183,7 +187,7 @@ const Auth = () => {
                 <Checkbox
                   id="terms"
                   checked={acceptTerms}
-                  onCheckedChange={setAcceptTerms}
+                  onCheckedChange={handleTermsChange}
                   className="border-muted-foreground data-[state=checked]:bg-peach data-[state=checked]:border-peach"
                 />
                 <Label htmlFor="terms" className="text-sm text-muted-foreground">
