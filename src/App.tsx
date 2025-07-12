@@ -15,6 +15,7 @@ import MyEvents from "./pages/MyEvents";
 import Explore from "./pages/Explore";
 import CrossedPaths from "./pages/CrossedPaths";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/explore" element={<Explore />} />
             <Route path="/crossed-paths" element={<CrossedPaths />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

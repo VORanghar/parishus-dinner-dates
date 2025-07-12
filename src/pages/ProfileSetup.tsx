@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import ImageUpload from '@/components/ImageUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Upload, MapPin } from 'lucide-react';
+import { ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 
 const ProfileSetup = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -126,12 +126,12 @@ const ProfileSetup = () => {
           
           <div>
             <Label>Profile Photo (Optional)</Label>
-            <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
-              <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground mb-2">Upload your photo</p>
-              <Button variant="outline" size="sm" className="bg-muted border-0">
-                Choose File
-              </Button>
+            <div className="flex justify-center mt-2">
+              <ImageUpload
+                currentImage={profileData.profileImage}
+                onImageChange={(imageUrl) => setProfileData(prev => ({ ...prev, profileImage: imageUrl }))}
+                size="lg"
+              />
             </div>
           </div>
         </div>

@@ -54,7 +54,12 @@ const Profile = () => {
                     <h2 className="text-2xl font-bold">
                       {user?.firstName} {user?.lastName}
                     </h2>
-                    <Button size="sm" variant="outline" className="bg-muted border-0">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="bg-muted border-0"
+                      onClick={() => navigate('/settings')}
+                    >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
@@ -131,7 +136,10 @@ const Profile = () => {
                 </div>
               </Card>
 
-              <Card className="p-4 hover:bg-card/80 transition-colors cursor-pointer">
+              <Card 
+                className="p-4 hover:bg-card/80 transition-colors cursor-pointer"
+                onClick={() => navigate('/settings')}
+              >
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
                     <Settings className="w-5 h-5 text-muted-foreground" />
