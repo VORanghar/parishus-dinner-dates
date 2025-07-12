@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import CrossedPathsProfileModal from '@/components/CrossedPathsProfileModal';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,38 +9,76 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MapPin, Calendar, Coffee, MessageSquare } from 'lucide-react';
 
 const CrossedPaths = () => {
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   const matches = [
     {
       id: 1,
       name: 'Sarah Chen',
       image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=400&fit=crop',
       jobTitle: 'UX Designer',
-      commonPlaces: ['Blue Bottle Coffee', 'Tartine Bakery', 'State Bird Provisions'],
-      lastSeen: '2 days ago',
+      diningStyle: 'Foodie Enthusiast',
+      location: 'San Francisco, CA',
       compatibility: 85,
-      diningStyle: 'Foodie Enthusiast'
+      commonPlaces: ['Blue Bottle Coffee', 'Tartine Bakery', 'State Bird Provisions', 'Foreign Cinema', 'Mission Chinese Food'],
+      lastSeen: '2 days ago',
+      bio: 'I love exploring new restaurants and trying cuisines from around the world. Always up for a good conversation over great food!',
+      dietaryPreferences: ['Vegetarian', 'Gluten-free'],
+      favoriteRestaurants: ['State Bird Provisions', 'Greens Restaurant', 'Shizen'],
+      rating: 4.8,
+      eventsAttended: 12
     },
     {
       id: 2,
       name: 'Marcus Johnson',
       image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=400&fit=crop',
       jobTitle: 'Software Engineer',
+      diningStyle: 'Adventurous Explorer',
+      location: 'San Francisco, CA',
+      compatibility: 78,
       commonPlaces: ['Philz Coffee', 'Swan Oyster Depot', 'Mission Chinese Food'],
       lastSeen: '1 week ago',
-      compatibility: 78,
-      diningStyle: 'Adventurous Explorer'
+      bio: 'Always looking for the next great meal and interesting people to share it with. Love trying hole-in-the-wall spots!',
+      dietaryPreferences: ['Pescatarian'],
+      favoriteRestaurants: ['Swan Oyster Depot', 'Tadich Grill', 'La Taquería'],
+      rating: 4.9,
+      eventsAttended: 8
     },
     {
       id: 3,
       name: 'Elena Rodriguez',
       image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=400&fit=crop',
       jobTitle: 'Marketing Manager',
+      diningStyle: 'Local Lover',
+      location: 'San Francisco, CA',
+      compatibility: 92,
       commonPlaces: ['Ritual Coffee', 'Zuni Café', 'Flour + Water'],
       lastSeen: '3 days ago',
-      compatibility: 92,
-      diningStyle: 'Local Lover'
+      bio: 'SF native who knows all the best local spots. I enjoy both fine dining and casual neighborhood gems.',
+      dietaryPreferences: ['Dairy-free'],
+      favoriteRestaurants: ['Zuni Café', 'Flour + Water', 'Tartine Bakery'],
+      rating: 4.7,
+      eventsAttended: 15
     }
   ];
+
+  const handleProfileClick = (match: any) => {
+    setSelectedProfile(match);
+    setShowProfileModal(true);
+  };
+
+  const handleInviteToDinner = () => {
+    console.log('Inviting to dinner:', selectedProfile?.name);
+    setShowProfileModal(false);
+    // Handle invite logic
+  };
+
+  const handleSendMessage = () => {
+    console.log('Sending message to:', selectedProfile?.name);
+    setShowProfileModal(false);
+    // Handle messaging logic
+  };
 
   const MatchCard = ({ match }: { match: any }) => {
     const getInitials = (name: string) => 
@@ -52,7 +91,7 @@ const CrossedPaths = () => {
     };
 
     return (
-      <Card className="p-6 hover:bg-card/80 transition-colors animate-fade-in">
+      <Card className="p-6 hover:bg-card/80 transition-colors animate-fade-in cursor-pointer" onClick={() => handleProfileClick(match)}>
         <div className="flex items-start space-x-4 mb-4">
           <Avatar className="w-16 h-16">
             <AvatarImage src={match.image} alt={match.name} />
@@ -107,11 +146,23 @@ const CrossedPaths = () => {
         <div className="flex space-x-2">
           <Button 
             size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleInviteToDinner();
+            }}
             className="flex-1 bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
           >
             Invite to Dinner
           </Button>
-          <Button size="sm" variant="outline" className="bg-muted border-0">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSendMessage();
+            }}
+            className="bg-muted border-0"
+          >
             <MessageSquare className="w-4 h-4" />
           </Button>
         </div>
@@ -186,6 +237,17 @@ const CrossedPaths = () => {
 
       {/* Mobile Navigation */}
       <Navigation className="md:hidden" />
+
+      {/* Profile Modal */}
+      {selectedProfile && (
+        <CrossedPathsProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          profile={selectedProfile}
+          onInviteToDinner={handleInviteToDinner}
+          onSendMessage={handleSendMessage}
+        />
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import RSVPCheckout from '@/components/RSVPCheckout';
+import EventDetailModal from '@/components/EventDetailModal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,8 @@ import { Calendar, Clock, MapPin, Users, Star, Plus } from 'lucide-react';
 
 const Dashboard = () => {
   const [showRSVPModal, setShowRSVPModal] = useState(false);
+  const [showEventDetail, setShowEventDetail] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   
   const mysteryDinner = {
     id: '1',
@@ -16,9 +19,24 @@ const Dashboard = () => {
     date: 'Dec 21, 2023',
     time: '7:00 PM',
     location: 'Downtown SF',
+    description: 'Join us for an evening of culinary surprises at a secret location in downtown San Francisco. Our chef will prepare a multi-course tasting menu featuring seasonal ingredients and unexpected flavor combinations.',
     price: 45,
     seatsLeft: 3,
-    totalSeats: 8
+    totalSeats: 8,
+    attendees: 5,
+    maxAttendees: 8,
+    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=200&fit=crop',
+    host: {
+      name: 'Chef Marcus',
+      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=100&h=100&fit=crop',
+      rating: 4.8
+    },
+    guests: [
+      { id: '1', name: 'Sarah C.', image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=100&h=100&fit=crop' },
+      { id: '2', name: 'Mike R.', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=100&h=100&fit=crop' },
+      { id: '3', name: 'Elena M.', image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=100&h=100&fit=crop' }
+    ],
+    tags: ['Mystery', 'Multi-course', 'Seasonal']
   };
 
   const upcomingEvents = [
@@ -28,9 +46,17 @@ const Dashboard = () => {
       date: 'Dec 23, 2023',
       time: '6:30 PM',
       location: 'Tony\'s Little Star',
+      description: 'Authentic Italian cuisine in the heart of North Beach. Experience traditional recipes passed down through generations.',
       price: 38,
       seatsLeft: 2,
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop'
+      attendees: 4,
+      maxAttendees: 6,
+      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop',
+      host: {
+        name: 'Isabella Romano',
+        rating: 4.9
+      },
+      tags: ['Italian', 'Traditional', 'Wine Pairing']
     },
     {
       id: '3',
@@ -38,15 +64,34 @@ const Dashboard = () => {
       date: 'Dec 28, 2023',
       time: '7:30 PM',
       location: 'Japantown',
+      description: 'Discover the art of sushi making with our master chef. Learn about different fish varieties and proper sushi etiquette.',
       price: 52,
       seatsLeft: 5,
-      image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=200&fit=crop'
+      attendees: 3,
+      maxAttendees: 8,
+      image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=200&fit=crop',
+      host: {
+        name: 'Chef Tanaka',
+        rating: 5.0
+      },
+      tags: ['Sushi', 'Japanese', 'Educational']
     }
   ];
 
+  const handleEventClick = (event: any) => {
+    setSelectedEvent(event);
+    setShowEventDetail(true);
+  };
+
   const handleRSVP = (paymentData: any) => {
     console.log('RSVP confirmed with payment:', paymentData);
+    setShowRSVPModal(false);
     // Handle successful RSVP
+  };
+
+  const handleEventRSVP = () => {
+    setShowEventDetail(false);
+    setShowRSVPModal(true);
   };
 
   return (
@@ -72,7 +117,7 @@ const Dashboard = () => {
           </div>
 
           {/* Mystery Dinner Card */}
-          <Card className="mb-8 overflow-hidden">
+          <Card className="mb-8 overflow-hidden cursor-pointer hover:bg-card/80 transition-colors" onClick={() => handleEventClick(mysteryDinner)}>
             <div className="bg-gradient-to-r from-peach/20 to-sage/20 p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -107,7 +152,10 @@ const Dashboard = () => {
               </div>
 
               <Button
-                onClick={() => setShowRSVPModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowRSVPModal(true);
+                }}
                 className="w-full bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
                 disabled={mysteryDinner.seatsLeft === 0}
               >
@@ -127,7 +175,7 @@ const Dashboard = () => {
             
             <div className="grid md:grid-cols-2 gap-6">
               {upcomingEvents.map(event => (
-                <Card key={event.id} className="overflow-hidden hover:bg-card/80 transition-colors">
+                <Card key={event.id} className="overflow-hidden hover:bg-card/80 transition-colors cursor-pointer" onClick={() => handleEventClick(event)}>
                   <div className="aspect-video relative overflow-hidden">
                     <img 
                       src={event.image} 
@@ -163,6 +211,11 @@ const Dashboard = () => {
 
                     <Button
                       size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedEvent(event);
+                        setShowRSVPModal(true);
+                      }}
                       className="w-full bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
                     >
                       RSVP - ${event.price}
@@ -205,11 +258,21 @@ const Dashboard = () => {
       {/* Mobile Navigation */}
       <Navigation className="md:hidden" />
 
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <EventDetailModal
+          isOpen={showEventDetail}
+          onClose={() => setShowEventDetail(false)}
+          event={selectedEvent}
+          onRSVP={handleEventRSVP}
+        />
+      )}
+
       {/* RSVP Modal */}
       <RSVPCheckout
         isOpen={showRSVPModal}
         onClose={() => setShowRSVPModal(false)}
-        event={mysteryDinner}
+        event={selectedEvent || mysteryDinner}
         onRSVP={handleRSVP}
       />
     </div>

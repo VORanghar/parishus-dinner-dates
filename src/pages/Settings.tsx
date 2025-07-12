@@ -8,55 +8,69 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Bell, Lock, CreditCard, Globe, Shield, Trash2 } from 'lucide-react';
+import { Bell, Lock, CreditCard, User, ArrowLeft } from 'lucide-react';
 
 const Settings = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   
-  const [profileData, setProfileData] = useState({
+  const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
-    jobTitle: user?.jobTitle || '',
     location: user?.location || '',
     diningStyle: user?.diningStyle || '',
     dietaryPreferences: user?.dietaryPreferences || [],
-    profileImage: user?.profileImage || ''
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
+  const [notifications, setNotifications] = useState({
     eventReminders: true,
     crossedPaths: true,
-    newEvents: false,
-    marketing: false
+    newMatches: false,
+    marketing: false,
   });
 
-  const [privacySettings, setPrivacySettings] = useState({
-    profileVisibility: 'public',
-    locationSharing: true,
-    showInCrossedPaths: true
-  });
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  const dietaryOptions = [
-    'No restrictions', 'Vegetarian', 'Vegan', 'Gluten-free', 
-    'Dairy-free', 'Keto', 'Paleo', 'Halal', 'Kosher'
+  const handleImageUpload = (imageUrl: string) => {
+    if (user && updateUser) {
+      updateUser({ ...user, profileImage: imageUrl });
+    }
+  };
+
+  const handleSave = () => {
+    if (user && updateUser) {
+      updateUser({ ...user, ...formData });
+    }
+    navigate('/profile');
+  };
+
+  const diningStyles = [
+    'Adventurous Explorer',
+    'Foodie Enthusiast', 
+    'Local Lover',
+    'Social Butterfly',
+    'Casual Diner'
   ];
 
-  const handleProfileUpdate = async () => {
-    await updateProfile(profileData);
-    // Show success toast or feedback
-  };
-
-  const handleImageChange = (imageUrl: string) => {
-    setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
-  };
+  const dietaryOptions = [
+    'Vegetarian',
+    'Vegan', 
+    'Gluten-free',
+    'Dairy-free',
+    'Nut-free',
+    'Halal',
+    'Kosher'
+  ];
 
   const toggleDietaryPreference = (preference: string) => {
-    setProfileData(prev => ({
+    setFormData(prev => ({
       ...prev,
       dietaryPreferences: prev.dietaryPreferences.includes(preference)
         ? prev.dietaryPreferences.filter(p => p !== preference)
@@ -81,52 +95,48 @@ const Settings = () => {
         <div className="flex-1 p-6 pb-24 md:pb-6">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="flex items-center space-x-4 mb-6">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="flex items-center mb-6">
+              <Button 
+                variant="ghost" 
+                size="sm" 
                 onClick={() => navigate('/profile')}
-                className="text-muted-foreground hover:text-foreground"
+                className="mr-4"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Profile
+                <ArrowLeft className="w-4 h-4" />
               </Button>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+                <p className="text-muted-foreground">Manage your account and preferences</p>
+              </div>
             </div>
-
-            <h2 className="text-2xl font-bold mb-6">Settings</h2>
 
             {/* Profile Settings */}
             <Card className="p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
-              
-              <div className="space-y-6">
-                {/* Profile Image */}
-                <div className="flex justify-center">
-                  <ImageUpload
-                    currentImage={profileData.profileImage}
-                    onImageChange={handleImageChange}
-                    size="lg"
-                  />
+              <div className="flex items-center space-x-4 mb-6">
+                <User className="w-5 h-5 text-peach" />
+                <h3 className="text-lg font-semibold">Profile Information</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-center mb-6">
+                  <ImageUpload onImageUpload={handleImageUpload} currentImage={user?.profileImage} />
                 </div>
 
-                {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={profileData.firstName}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
-                      className="bg-muted border-0"
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
                     />
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={profileData.lastName}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="bg-muted border-0"
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
                     />
                   </div>
                 </div>
@@ -135,20 +145,9 @@ const Settings = () => {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                    className="bg-muted border-0"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="jobTitle">Job Title</Label>
-                  <Input
-                    id="jobTitle"
-                    value={profileData.jobTitle}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, jobTitle: e.target.value }))}
-                    placeholder="e.g., Software Engineer"
-                    className="bg-muted border-0"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
                   />
                 </div>
 
@@ -156,25 +155,43 @@ const Settings = () => {
                   <Label htmlFor="location">Location</Label>
                   <Input
                     id="location"
-                    value={profileData.location}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="San Francisco, CA"
-                    className="bg-muted border-0"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    placeholder="City, State"
                   />
                 </div>
 
-                {/* Dietary Preferences */}
+                <div>
+                  <Label>Dining Style</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {diningStyles.map(style => (
+                      <Badge
+                        key={style}
+                        variant={formData.diningStyle === style ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          formData.diningStyle === style 
+                            ? 'bg-peach/20 text-peach border-peach/30' 
+                            : 'hover:bg-muted'
+                        }`}
+                        onClick={() => handleInputChange('diningStyle', style)}
+                      >
+                        {style}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <Label>Dietary Preferences</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {dietaryOptions.map(option => (
                       <Badge
                         key={option}
-                        variant={profileData.dietaryPreferences.includes(option) ? "default" : "outline"}
-                        className={`cursor-pointer p-2 text-center justify-center transition-colors ${
-                          profileData.dietaryPreferences.includes(option)
-                            ? "bg-gradient-to-r from-peach to-sage text-dark-bg border-0"
-                            : "hover:bg-muted"
+                        variant={formData.dietaryPreferences.includes(option) ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          formData.dietaryPreferences.includes(option)
+                            ? 'bg-sage/20 text-sage border-sage/30'
+                            : 'hover:bg-muted'
                         }`}
                         onClick={() => toggleDietaryPreference(option)}
                       >
@@ -183,116 +200,109 @@ const Settings = () => {
                     ))}
                   </div>
                 </div>
-
-                <Button
-                  onClick={handleProfileUpdate}
-                  className="bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
-                >
-                  Save Profile Changes
-                </Button>
               </div>
             </Card>
 
             {/* Notification Settings */}
             <Card className="p-6 mb-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Bell className="w-5 h-5 text-muted-foreground" />
+              <div className="flex items-center space-x-4 mb-6">
+                <Bell className="w-5 h-5 text-sage" />
                 <h3 className="text-lg font-semibold">Notifications</h3>
               </div>
-              
+
               <div className="space-y-4">
-                {Object.entries(notificationSettings).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {key === 'eventReminders' && 'Get reminded about upcoming events'}
-                        {key === 'crossedPaths' && 'Notifications when you cross paths with others'}
-                        {key === 'newEvents' && 'Be notified of new events in your area'}
-                        {key === 'marketing' && 'Receive promotional emails and updates'}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={value}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, [key]: checked }))
-                      }
-                    />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Event Reminders</p>
+                    <p className="text-sm text-muted-foreground">Get notified about upcoming events</p>
                   </div>
-                ))}
+                  <Switch
+                    checked={notifications.eventReminders}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, eventReminders: checked }))}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Crossed Paths</p>
+                    <p className="text-sm text-muted-foreground">New people you've crossed paths with</p>
+                  </div>
+                  <Switch
+                    checked={notifications.crossedPaths}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, crossedPaths: checked }))}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">New Matches</p>
+                    <p className="text-sm text-muted-foreground">When someone wants to connect</p>
+                  </div>
+                  <Switch
+                    checked={notifications.newMatches}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, newMatches: checked }))}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Marketing</p>
+                    <p className="text-sm text-muted-foreground">Updates about new features</p>
+                  </div>
+                  <Switch
+                    checked={notifications.marketing}
+                    onCheckedChange={(checked) => 
+                      setNotifications(prev => ({ ...prev, marketing: checked }))}
+                  />
+                </div>
               </div>
             </Card>
 
             {/* Privacy Settings */}
             <Card className="p-6 mb-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Shield className="w-5 h-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Privacy</h3>
+              <div className="flex items-center space-x-4 mb-6">
+                <Lock className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Privacy & Security</h3>
               </div>
-              
+
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Location Sharing</p>
-                    <p className="text-sm text-muted-foreground">
-                      Allow others to see your general location
-                    </p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.locationSharing}
-                    onCheckedChange={(checked) => 
-                      setPrivacySettings(prev => ({ ...prev, locationSharing: checked }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Show in Crossed Paths</p>
-                    <p className="text-sm text-muted-foreground">
-                      Appear in other users' crossed paths recommendations
-                    </p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.showInCrossedPaths}
-                    onCheckedChange={(checked) => 
-                      setPrivacySettings(prev => ({ ...prev, showInCrossedPaths: checked }))
-                    }
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Account Actions */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Account</h3>
-              
-              <div className="space-y-3">
                 <Button variant="outline" className="w-full justify-start bg-muted border-0">
-                  <Lock className="w-4 h-4 mr-2" />
                   Change Password
                 </Button>
-                
                 <Button variant="outline" className="w-full justify-start bg-muted border-0">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Payment Methods
+                  Download My Data
                 </Button>
-                
-                <Button variant="outline" className="w-full justify-start bg-muted border-0">
-                  <Globe className="w-4 h-4 mr-2" />
-                  Export Data
-                </Button>
-                
-                <Separator />
-                
-                <Button variant="destructive" className="w-full justify-start">
-                  <Trash2 className="w-4 h-4 mr-2" />
+                <Button variant="outline" className="w-full justify-start bg-muted border-0 text-destructive">
                   Delete Account
                 </Button>
               </div>
             </Card>
+
+            {/* Save Button */}
+            <div className="flex space-x-4">
+              <Button
+                onClick={handleSave}
+                className="flex-1 bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
+              >
+                Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/profile')}
+                className="bg-muted border-0"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       </div>
