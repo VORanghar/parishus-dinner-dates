@@ -38,7 +38,7 @@ const Settings = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = (imageUrl: string) => {
+  const handleImageChange = (imageUrl: string) => {
     if (user && updateProfile) {
       updateProfile({ ...user, profileImage: imageUrl });
     }
@@ -119,7 +119,7 @@ const Settings = () => {
 
               <div className="space-y-4">
                 <div className="flex justify-center mb-6">
-                  <ImageUpload onImageChange={handleImageUpload} currentImage={user?.profileImage} />
+                  <ImageUpload onImageChange={handleImageChange} currentImage={user?.profileImage} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

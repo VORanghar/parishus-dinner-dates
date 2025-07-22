@@ -1,74 +1,72 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import RSVPCheckout from '@/components/RSVPCheckout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, MapPin, Users, Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const filters = [
     'Italian', 'Asian', 'Mexican', 'Fine Dining', 'Casual', 'Vegetarian', 'This Week', 'Next Week'
   ];
 
-  const events = [
-    {
-      id: 1,
-      name: 'Mystery Dinner Thursday',
-      description: 'Join us for a curated mystery dining experience in downtown SF',
-      date: 'Dec 21, 2023',
-      time: '7:00 PM',
-      location: 'Downtown SF',
-      attendees: 6,
-      maxAttendees: 8,
-      tags: ['Mystery', 'Fine Dining'],
-      host: 'ParishUs Team',
-      image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=200&fit=crop'
-    },
-    {
-      id: 2,
-      name: 'Authentic Ramen Night',
-      description: 'Discover the best ramen spots in Japantown with fellow noodle enthusiasts',
-      date: 'Dec 22, 2023',
-      time: '6:30 PM',
-      location: 'Japantown',
-      attendees: 4,
-      maxAttendees: 6,
-      tags: ['Asian', 'Casual'],
-      host: 'Sarah M.',
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop'
-    },
-    {
-      id: 3,
-      name: 'Taco Tuesday Crawl',
-      description: 'Hop between the best taco spots in the Mission District',
-      date: 'Dec 26, 2023',
-      time: '7:00 PM',
-      location: 'Mission District',
-      attendees: 8,
-      maxAttendees: 10,
-      tags: ['Mexican', 'Casual'],
-      host: 'Carlos R.',
-      image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=200&fit=crop'
-    },
-    {
-      id: 4,
-      name: 'Farm-to-Table Experience',
-      description: 'Seasonal ingredients and sustainable dining at its finest',
-      date: 'Dec 29, 2023',
-      time: '6:00 PM',
-      location: 'Napa Valley',
-      attendees: 2,
-      maxAttendees: 8,
-      tags: ['Fine Dining', 'Vegetarian'],
-      host: 'Emma L.',
-      image: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=400&h=200&fit=crop'
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load events. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const handleRSVP = (event: any) => {
+    setSelectedEvent({
+      id: event.id,
+      name: event.name,
+      price: event.price,
+      date: event.date,
+      time: event.time,
+      location: event.location
+    });
+    setIsCheckoutOpen(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "RSVP Confirmed!",
+      description: "Your payment was successful. Check your email for confirmation.",
+    });
+    loadEvents(); // Refresh events to update attendee count
+  };
 
   const toggleFilter = (filter: string) => {
     setSelectedFilters(prev => 
@@ -78,67 +76,78 @@ const Explore = () => {
     );
   };
 
-  const EventCard = ({ event }: { event: any }) => (
-    <Card className="overflow-hidden hover:bg-card/80 transition-colors animate-fade-in">
-      <div className="aspect-video relative overflow-hidden">
-        <img 
-          src={event.image} 
-          alt={event.name}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-3 right-3">
-          <Badge className="bg-peach/20 text-peach border-peach/30">
-            {event.maxAttendees - event.attendees} seats left
-          </Badge>
-        </div>
-      </div>
-      
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg">{event.name}</h3>
-        </div>
-        
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-          {event.description}
-        </p>
-        
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center space-x-2 text-muted-foreground text-sm">
-            <Calendar className="w-4 h-4" />
-            <span>{event.date}</span>
-            <Clock className="w-4 h-4 ml-2" />
-            <span>{event.time}</span>
-          </div>
-          
-          <div className="flex items-center space-x-2 text-muted-foreground text-sm">
-            <MapPin className="w-4 h-4" />
-            <span>{event.location}</span>
-          </div>
-          
-          <div className="flex items-center space-x-2 text-muted-foreground text-sm">
-            <Users className="w-4 h-4" />
-            <span>{event.attendees}/{event.maxAttendees} people</span>
-            <span className="ml-2">• Hosted by {event.host}</span>
-          </div>
-        </div>
+  const EventCard = ({ event }: { event: any }) => {
+    const seatsLeft = event.max_attendees - event.current_attendees;
+    const priceDisplay = (event.price / 100).toFixed(2);
 
-        <div className="flex flex-wrap gap-1 mb-4">
-          {event.tags.map((tag: string) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
+    return (
+      <Card className="overflow-hidden hover:bg-card/80 transition-colors animate-fade-in">
+        <div className="aspect-video relative overflow-hidden">
+          <img 
+            src={event.image_url || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=200&fit=crop'} 
+            alt={event.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-3 right-3">
+            <Badge className="bg-peach/20 text-peach border-peach/30">
+              {seatsLeft} seats left
             </Badge>
-          ))}
+          </div>
+          <div className="absolute bottom-3 left-3">
+            <Badge className="bg-dark-bg/80 text-white">
+              ${priceDisplay}
+            </Badge>
+          </div>
         </div>
+        
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold text-lg">{event.name}</h3>
+          </div>
+          
+          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+            {event.description}
+          </p>
+          
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+              <Calendar className="w-4 h-4" />
+              <span>{event.date}</span>
+              <Clock className="w-4 h-4 ml-2" />
+              <span>{event.time}</span>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+              <MapPin className="w-4 h-4" />
+              <span>{event.location}</span>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-muted-foreground text-sm">
+              <Users className="w-4 h-4" />
+              <span>{event.current_attendees}/{event.max_attendees} people</span>
+              <span className="ml-2">• Hosted by {event.host}</span>
+            </div>
+          </div>
 
-        <Button 
-          className="w-full bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
-          disabled={event.attendees >= event.maxAttendees}
-        >
-          {event.attendees >= event.maxAttendees ? 'Full' : 'RSVP'}
-        </Button>
-      </div>
-    </Card>
-  );
+          <div className="flex flex-wrap gap-1 mb-4">
+            {event.tags?.map((tag: string) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+
+          <Button 
+            className="w-full bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
+            disabled={seatsLeft <= 0}
+            onClick={() => handleRSVP(event)}
+          >
+            {seatsLeft <= 0 ? 'Full' : `RSVP - $${priceDisplay}`}
+          </Button>
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-bg to-dark-card">
@@ -195,9 +204,20 @@ const Explore = () => {
 
           {/* Events Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map(event => (
-              <EventCard key={event.id} event={event} />
-            ))}
+            {isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-peach mx-auto"></div>
+                <p className="mt-2 text-muted-foreground">Loading events...</p>
+              </div>
+            ) : events.length > 0 ? (
+              events.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No events found.</p>
+              </div>
+            )}
           </div>
 
           {/* Load More */}
@@ -211,6 +231,14 @@ const Explore = () => {
 
       {/* Mobile Navigation */}
       <Navigation className="md:hidden" />
+
+      {/* RSVP Checkout Modal */}
+      <RSVPCheckout
+        event={selectedEvent}
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 };

@@ -5,234 +5,284 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { CreditCard, Calendar, MapPin, Users, X } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, CreditCard } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-interface RSVPCheckoutProps {
-  isOpen: boolean;
-  onClose: () => void;
-  event: {
-    id: string;
-    name: string;
-    date: string;
-    time: string;
-    location: string;
-    price: number;
-    seatsLeft: number;
-  };
-  onRSVP: (paymentData: any) => void;
+interface Event {
+  id: string;
+  name: string;
+  price: number;
+  date: string;
+  time: string;
+  location: string;
 }
 
-const RSVPCheckout = ({ isOpen, onClose, event, onRSVP }: RSVPCheckoutProps) => {
-  const [paymentData, setPaymentData] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: '',
-    billingAddress: {
-      street: '',
-      city: '',
-      zipCode: '',
-      country: 'US'
-    }
-  });
+interface RSVPCheckoutProps {
+  event: Event | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+interface BillingInfo {
+  fullName: string;
+  email: string;
+  address: string;
+  city: string;
+  country: string;
+  zipCode: string;
+}
+
+const RSVPCheckout: React.FC<RSVPCheckoutProps> = ({ event, isOpen, onClose, onSuccess }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({
+    fullName: '',
+    email: '',
+    address: '',
+    city: '',
+    country: 'US',
+    zipCode: '',
+  });
+  const { toast } = useToast();
 
-  const handleInputChange = (field: string, value: string) => {
-    if (field.startsWith('billing.')) {
-      const billingField = field.split('.')[1];
-      setPaymentData(prev => ({
-        ...prev,
-        billingAddress: {
-          ...prev.billingAddress,
-          [billingField]: value
-        }
-      }));
-    } else {
-      setPaymentData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+  const handleInputChange = (field: keyof BillingInfo, value: string) => {
+    setBillingInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    const required = ['fullName', 'email', 'address', 'city', 'zipCode'];
+    for (const field of required) {
+      if (!billingInfo[field as keyof BillingInfo]) {
+        toast({
+          title: "Missing Information",
+          description: `Please fill in your ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
+          variant: "destructive",
+        });
+        return false;
+      }
     }
-  };
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(billingInfo.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return false;
     }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
+    
+    return true;
   };
 
-  const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\D/g, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
+  const handlePayment = async () => {
+    if (!event || !validateForm()) return;
 
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value);
-    handleInputChange('cardNumber', formatted);
-  };
-
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatExpiryDate(e.target.value);
-    handleInputChange('expiryDate', formatted);
-  };
-
-  const handleSubmit = async () => {
     setIsProcessing(true);
-    // Simulate payment processing
-    setTimeout(() => {
-      onRSVP(paymentData);
-      setIsProcessing(false);
+    
+    try {
+      // Create payment intent
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          eventId: event.id,
+          billingInfo,
+          quantity
+        }
+      });
+
+      if (error) throw error;
+
+      // Open Stripe checkout in new tab
+      window.open(data.url, '_blank');
+      
+      toast({
+        title: "Payment Processing",
+        description: "Complete your payment in the new tab to confirm your RSVP",
+      });
+
       onClose();
-    }, 2000);
+      
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Unable to process payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  if (!event) return null;
+
+  const totalAmount = (event.price * quantity) / 100; // Convert from cents
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            RSVP for {event.name}
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
+          <DialogTitle className="flex items-center space-x-2">
+            <CreditCard className="w-5 h-5 text-peach" />
+            <span>Complete Your RSVP</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Event Summary */}
-          <Card className="p-4">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span>{event.date} at {event.time}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>{event.location}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>{event.seatsLeft} seats remaining</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="font-semibold">Total</span>
-                <span className="text-xl font-bold text-peach">${event.price}</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* Payment Form */}
-          <Card className="p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <CreditCard className="w-5 h-5 text-muted-foreground" />
-              <h3 className="font-semibold">Payment Information</h3>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Billing Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Billing Information</h3>
             
-            <div className="space-y-4">
+            <div>
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                value={billingInfo.fullName}
+                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                placeholder="John Doe"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={billingInfo.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address">Address *</Label>
+              <Input
+                id="address"
+                value={billingInfo.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="123 Main Street"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="cardholderName">Cardholder Name</Label>
+                <Label htmlFor="city">City *</Label>
                 <Input
-                  id="cardholderName"
-                  value={paymentData.cardholderName}
-                  onChange={(e) => handleInputChange('cardholderName', e.target.value)}
-                  placeholder="John Doe"
-                  className="bg-muted border-0"
+                  id="city"
+                  value={billingInfo.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="San Francisco"
                 />
               </div>
-
               <div>
-                <Label htmlFor="cardNumber">Card Number</Label>
+                <Label htmlFor="zipCode">Zip Code *</Label>
                 <Input
-                  id="cardNumber"
-                  value={paymentData.cardNumber}
-                  onChange={handleCardNumberChange}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                  className="bg-muted border-0"
+                  id="zipCode"
+                  value={billingInfo.zipCode}
+                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                  placeholder="94102"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
-                    id="expiryDate"
-                    value={paymentData.expiryDate}
-                    onChange={handleExpiryChange}
-                    placeholder="MM/YY"
-                    maxLength={5}
-                    className="bg-muted border-0"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    value={paymentData.cvv}
-                    onChange={(e) => handleInputChange('cvv', e.target.value.replace(/\D/g, '').substring(0, 3))}
-                    placeholder="123"
-                    maxLength={3}
-                    className="bg-muted border-0"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-medium">Billing Address</h4>
-                <div>
-                  <Label htmlFor="street">Street Address</Label>
-                  <Input
-                    id="street"
-                    value={paymentData.billingAddress.street}
-                    onChange={(e) => handleInputChange('billing.street', e.target.value)}
-                    placeholder="123 Main St"
-                    className="bg-muted border-0"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={paymentData.billingAddress.city}
-                      onChange={(e) => handleInputChange('billing.city', e.target.value)}
-                      placeholder="San Francisco"
-                      className="bg-muted border-0"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="zipCode">ZIP Code</Label>
-                    <Input
-                      id="zipCode"
-                      value={paymentData.billingAddress.zipCode}
-                      onChange={(e) => handleInputChange('billing.zipCode', e.target.value)}
-                      placeholder="94102"
-                      className="bg-muted border-0"
-                    />
-                  </div>
-                </div>
               </div>
             </div>
-          </Card>
 
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                value={billingInfo.country}
+                onChange={(e) => handleInputChange('country', e.target.value)}
+                placeholder="United States"
+              />
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Order Summary</h3>
+            
+            <Card className="p-4 bg-muted/50">
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-medium text-foreground">{event.name}</h4>
+                  <p className="text-sm text-muted-foreground">{event.date} at {event.time}</p>
+                  <p className="text-sm text-muted-foreground">{event.location}</p>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex justify-between items-center">
+                  <span>Quantity:</span>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 p-0"
+                    >
+                      -
+                    </Button>
+                    <span className="w-8 text-center">{quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 p-0"
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span>Price per ticket:</span>
+                  <span>${(event.price / 100).toFixed(2)}</span>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total:</span>
+                  <span className="text-peach">${totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </Card>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                🔒 Secure payment powered by Stripe. You'll be redirected to complete your payment safely.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex space-x-3 pt-4">
           <Button
-            onClick={handleSubmit}
+            variant="outline"
+            onClick={onClose}
             disabled={isProcessing}
-            className="w-full bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
+            className="flex-1"
           >
-            {isProcessing ? "Processing Payment..." : `Confirm RSVP - $${event.price}`}
+            Cancel
+          </Button>
+          <Button
+            onClick={handlePayment}
+            disabled={isProcessing}
+            className="flex-1 bg-gradient-to-r from-peach to-sage hover:from-peach/90 hover:to-sage/90 text-dark-bg font-semibold"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-4 h-4 mr-2" />
+                Pay ${totalAmount.toFixed(2)}
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>

@@ -273,7 +273,10 @@ const Dashboard = () => {
         isOpen={showRSVPModal}
         onClose={() => setShowRSVPModal(false)}
         event={selectedEvent || mysteryDinner}
-        onRSVP={handleRSVP}
+        onSuccess={() => {
+          setShowRSVPModal(false);
+          // Handle success if needed
+        }}
       />
     </div>
   );
