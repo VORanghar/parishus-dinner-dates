@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Bell, Lock, CreditCard, User, ArrowLeft } from 'lucide-react';
 
 const Settings = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -39,14 +39,14 @@ const Settings = () => {
   };
 
   const handleImageUpload = (imageUrl: string) => {
-    if (user && updateUser) {
-      updateUser({ ...user, profileImage: imageUrl });
+    if (user && updateProfile) {
+      updateProfile({ ...user, profileImage: imageUrl });
     }
   };
 
   const handleSave = () => {
-    if (user && updateUser) {
-      updateUser({ ...user, ...formData });
+    if (user && updateProfile) {
+      updateProfile({ ...user, ...formData });
     }
     navigate('/profile');
   };
@@ -119,7 +119,7 @@ const Settings = () => {
 
               <div className="space-y-4">
                 <div className="flex justify-center mb-6">
-                  <ImageUpload onImageUpload={handleImageUpload} currentImage={user?.profileImage} />
+                  <ImageUpload onImageChange={handleImageUpload} currentImage={user?.profileImage} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

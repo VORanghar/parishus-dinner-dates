@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          created_at: string
+          current_attendees: number | null
+          date: string
+          description: string | null
+          host: string
+          id: string
+          image_url: string | null
+          location: string
+          max_attendees: number
+          name: string
+          price: number
+          tags: string[] | null
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_attendees?: number | null
+          date: string
+          description?: string | null
+          host: string
+          id?: string
+          image_url?: string | null
+          location: string
+          max_attendees: number
+          name: string
+          price: number
+          tags?: string[] | null
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_attendees?: number | null
+          date?: string
+          description?: string | null
+          host?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          max_attendees?: number
+          name?: string
+          price?: number
+          tags?: string[] | null
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          billing_address: Json
+          created_at: string
+          currency: string | null
+          full_name: string
+          id: string
+          status: string
+          stripe_payment_intent_id: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_email: string
+        }
+        Insert: {
+          amount: number
+          billing_address: Json
+          created_at?: string
+          currency?: string | null
+          full_name: string
+          id?: string
+          status?: string
+          stripe_payment_intent_id: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_email: string
+        }
+        Update: {
+          amount?: number
+          billing_address?: Json
+          created_at?: string
+          currency?: string | null
+          full_name?: string
+          id?: string
+          status?: string
+          stripe_payment_intent_id?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
+      rsvps: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          full_name: string
+          id: string
+          payment_id: string | null
+          quantity: number | null
+          status: string | null
+          updated_at: string
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          full_name: string
+          id?: string
+          payment_id?: string | null
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          full_name?: string
+          id?: string
+          payment_id?: string | null
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
